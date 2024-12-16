@@ -11,13 +11,31 @@ M.getLycees = async function(){
     return lyceesData;
 };
 
+M.getCandidats = async function(){
+    const candidatsData = Candidats.getAll();
+    return candidatsData;
+};
+
+M.filterLyceesWithCandidatures = async function(lyceesData) {
+    let candidatsData = await M.getCandidats(); // Assurez-vous que les candidats sont chargés ici
+    let lyceesAvecCandidatures = new Set();
+    
+    for (let candidat of candidatsData) {
+        if (candidat.Scolarite && candidat.Scolarite[0] && candidat.Scolarite[0].UAIEtablissementorigine) {
+            lyceesAvecCandidatures.add(candidat.Scolarite[0].UAIEtablissementorigine);
+        }
+    }
+
+    return lyceesData.filter(lycee => lyceesAvecCandidatures.has(lycee.numero_uai)); // Retourne directement le tableau filtré
+};
+
 let C = {};
 
 C.init = async function(){
     const lyceesData = await M.getLycees();
     V.init(lyceesData);
-    console.log(Candidats.getAll());
-    console.log(Lycees.getAll());
+    //console.log(Candidats.getAll());
+    //console.log(Lycees.getAll());
     return lyceesData;
 }
 
@@ -35,8 +53,11 @@ V.renderHeader= function(){
     V.header.innerHTML = HeaderView.render();
 }
 
-V.renderMap = function(lyceesData){
-    V.map = MapView.render(lyceesData);
+V.renderMap = async function(lyceesData) {
+    console.log('Lycées Data:', lyceesData);
+    const lyceesAvecCandidatures = await M.filterLyceesWithCandidatures(lyceesData); // Await ici
+    console.log('Filtered Lycées with candidatures:', lyceesAvecCandidatures);
+    V.map = MapView.render(lyceesAvecCandidatures); 
 };
 
 
