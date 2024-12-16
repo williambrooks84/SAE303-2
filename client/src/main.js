@@ -4,13 +4,21 @@ import { Candidats } from "./data/data-candidats.js";
 import { Lycees } from "./data/data-lycees.js";
 import './index.css';
 
+let M = {};
+
+M.getLycees = async function(){
+    const lyceesData = Lycees.getAll();
+    return lyceesData;
+};
 
 let C = {};
 
 C.init = async function(){
-    V.init();
+    const lyceesData = await M.getLycees();
+    V.init(lyceesData);
     console.log(Candidats.getAll());
     console.log(Lycees.getAll());
+    return lyceesData;
 }
 
 let V = {
@@ -18,17 +26,17 @@ let V = {
     map: document.querySelector("#map")
 };
 
-V.init = function(){
+V.init = function(lyceesData){
     V.renderHeader();
-    V.renderMap();
+    V.renderMap(lyceesData);
 }
 
 V.renderHeader= function(){
     V.header.innerHTML = HeaderView.render();
 }
 
-V.renderMap = function(){
-    V.map = MapView.render();
+V.renderMap = function(lyceesData){
+    V.map = MapView.render(lyceesData);
 };
 
 
