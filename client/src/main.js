@@ -17,61 +17,67 @@ M.getCandidats = async function(){
 };
 
 M.filterLyceesWithCandidatures = async function(lyceesData) {
-
-    let candidatsData = await M.getCandidats(); 
+    let candidatsData = await M.getCandidats(); // Assurez-vous que cette fonction retourne les données des candidats
     let lyceesAvecCandidatures = new Set();
 
+    // Récupération des UAI avec candidatures pour l'année la plus récente
     for (let candidat of candidatsData) {
-        // Vérifier si le candidat contient un array Scolarite et si le premier élément contient une propriété UAIEtablissementorigine
-        if (candidat.Scolarite && candidat.Scolarite[0] && candidat.Scolarite[0].UAIEtablissementorigine) {
-            // Ajouter la valeur UAIEtablissementorigine à lyceesAvecCandidatures
-            lyceesAvecCandidatures.add(candidat.Scolarite[0].UAIEtablissementorigine);
+        if (candidat.Scolarite && Array.isArray(candidat.Scolarite)) {
+            // Trouver l'année la plus récente
+            let scolariteRecente = candidat.Scolarite.reduce((mostRecent, current) => {
+                return (!mostRecent || current.AnneeScolaireLibelle > mostRecent.AnneeScolaireLibelle) 
+                    ? current 
+                    : mostRecent;
+            }, null);
+
+            // Ajouter le lycée d'origine si disponible
+            if (scolariteRecente && scolariteRecente.UAIEtablissementorigine) {
+                lyceesAvecCandidatures.add(scolariteRecente.UAIEtablissementorigine);
+            }
         }
     }
 
-    // Trier lyceesAvecCandidatures par ordre alphabétique
+    // Trier par ordre alphabétique
     let sortedLyceesAvecCandidatures = Array.from(lyceesAvecCandidatures).sort();
 
-    console.log(sortedLyceesAvecCandidatures);
+    console.log(`Lycees avec candidatures toutes années confondues (UAI triés) : `, sortedLyceesAvecCandidatures);
+    console.log(`Nombre de lycées avec candidatures toutes années confondues : `, sortedLyceesAvecCandidatures.length);
 
-    // Filtrer et retourner les lycées par ordre alphabétique des numero_uai
-    return lyceesData.filter(lycee => sortedLyceesAvecCandidatures.includes(lycee.numero_uai));
+    // Utilisation de binarySearch avec lyceesData
+    return sortedLyceesAvecCandidatures
+        .map(numero_uai => Lycees.binarySearch(numero_uai, lyceesData)) // Passer lyceesData ici
+        .filter(lycee => lycee !== undefined); // Exclure les lycées non trouvés
 };
 
 M.countCandidaturesByLycee = async function(candidatsData) {
-
     let candidaturesParLycee = {};
 
-    // Parcourir chaque candidat dans le tableau candidatsData
+    // Parcourir chaque candidat
     candidatsData.forEach(candidat => {
-        // Vérifier si le candidat ontient un array Scolarite
         if (candidat.Scolarite && Array.isArray(candidat.Scolarite)) {
-  
-            let uniqueUAIs = new Set();
+            // Trouver l'année la plus récente
+            let scolariteRecente = candidat.Scolarite.reduce((mostRecent, current) => {
+                return (!mostRecent || current.AnneeScolaireLibelle > mostRecent.AnneeScolaireLibelle) 
+                    ? current 
+                    : mostRecent;
+            }, null);
 
-            // Parcourir chaque scolarite dans l'array Scolarite
-            candidat.Scolarite.forEach(scolarite => {
-                // Ajouter la valeur UAIEtablissementorigine si existant
-                if (scolarite.UAIEtablissementorigine) {
-                    uniqueUAIs.add(scolarite.UAIEtablissementorigine);
-                }
-            });
+            // Mettre à jour le nombre de candidatures par UAI
+            if (scolariteRecente && scolariteRecente.UAIEtablissementorigine) {
+                let uai = scolariteRecente.UAIEtablissementorigine;
 
-            // Parcourur les valeurs UAIEtablissementorigine
-            uniqueUAIs.forEach(uai => {
-                // Si l'UAI n'existe pas
                 if (!candidaturesParLycee[uai]) {
                     candidaturesParLycee[uai] = 0;
                 }
-                //Incrémenter la valeur si existant
                 candidaturesParLycee[uai]++;
-            });
+            }
         }
     });
 
+    console.log(`Candidatures par lycée toutes années confondues:`, candidaturesParLycee);
+
     return candidaturesParLycee;
 };
-
 
 
 let C = {};

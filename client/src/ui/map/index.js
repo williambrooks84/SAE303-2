@@ -20,7 +20,9 @@ MapView.render = function(lyceesData, candidaturesParLycee) {
 };
 
 MapView.addMarkersForLycees = function(map, lyceesData, candidaturesParLycee) {
-    const markers = L.markerClusterGroup();
+    const markers = L.markerClusterGroup({
+        zoomToBoundsOnClick: false // Désactiver le zoom automatique sur les clusters
+    });
 
     if (Array.isArray(lyceesData)) {
         lyceesData.forEach(lycee => {
@@ -30,10 +32,22 @@ MapView.addMarkersForLycees = function(map, lyceesData, candidaturesParLycee) {
                 const nombreCandidatures = candidaturesParLycee[lycee.numero_uai] || 0;
                 const marker = L.marker([latitude, longitude])
                     .bindPopup(`<b>${lycee.appellation_officielle}</b><br>Candidatures: ${nombreCandidatures}`); // Afficher la bulle
+                marker.candidatures = nombreCandidatures; // Ajouter le nombre de candidatures à l'objet marker
                 markers.addLayer(marker);
             }
         });
     }
+
+    markers.on('clusterclick', function(event) {
+        const cluster = event.propagatedFrom;
+        let totalCandidatures = 0;
+
+        cluster.getAllChildMarkers().forEach(marker => {
+            totalCandidatures += marker.candidatures;
+        });
+
+        cluster.bindPopup(`Total Candidatures: ${totalCandidatures}`).openPopup();
+    });
 
     map.addLayer(markers);
 };
