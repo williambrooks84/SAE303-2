@@ -17,42 +17,32 @@ M.getCandidats = async function(){
 };
 
 M.filterLyceesWithCandidatures = async function(lyceesData) {
-    let candidatsData = await M.getCandidats(); // Assurez-vous que cette fonction retourne les données des candidats
+    let candidatsData = await M.getCandidats(); 
     let lyceesAvecCandidatures = new Set();
 
-    // Récupération des UAI avec candidatures pour l'année la plus récente
     for (let candidat of candidatsData) {
         if (candidat.Scolarite && Array.isArray(candidat.Scolarite)) {
-            // Trouver l'année la plus récente
             let scolariteRecente = candidat.Scolarite.reduce((mostRecent, current) => {
                 return (!mostRecent || current.AnneeScolaireLibelle > mostRecent.AnneeScolaireLibelle) 
                     ? current 
                     : mostRecent;
             }, null);
 
-            // Ajouter le lycée d'origine si disponible
             if (scolariteRecente && scolariteRecente.UAIEtablissementorigine) {
                 lyceesAvecCandidatures.add(scolariteRecente.UAIEtablissementorigine);
             }
         }
     }
 
-    // Trier par ordre alphabétique
     let sortedLyceesAvecCandidatures = Array.from(lyceesAvecCandidatures).sort();
-
-    console.log(`Lycees avec candidatures toutes années confondues (UAI triés) : `, sortedLyceesAvecCandidatures);
-    console.log(`Nombre de lycées avec candidatures toutes années confondues : `, sortedLyceesAvecCandidatures.length);
-
-    // Utilisation de binarySearch avec lyceesData
     return sortedLyceesAvecCandidatures
-        .map(numero_uai => Lycees.binarySearch(numero_uai, lyceesData)) // Passer lyceesData ici
-        .filter(lycee => lycee !== undefined); // Exclure les lycées non trouvés
+        .map(numero_uai => Lycees.binarySearch(numero_uai, lyceesData))
+        .filter(lycee => lycee !== undefined);
 };
 
 M.countCandidaturesByLycee = async function(candidatsData) {
     let candidaturesParLycee = {};
 
-    // Parcourir chaque candidat
     candidatsData.forEach(candidat => {
         if (candidat.Scolarite && Array.isArray(candidat.Scolarite)) {
             // Trouver l'année la plus récente
@@ -62,23 +52,34 @@ M.countCandidaturesByLycee = async function(candidatsData) {
                     : mostRecent;
             }, null);
 
-            // Mettre à jour le nombre de candidatures par UAI
             if (scolariteRecente && scolariteRecente.UAIEtablissementorigine) {
                 let uai = scolariteRecente.UAIEtablissementorigine;
 
+                // Normaliser la série de baccalauréat
+                let serieDiplomeCode = candidat.Baccalaureat?.SerieDiplomeCode
+                    ?.toLowerCase()                             // Convertir en minuscules
+                    .normalize("NFD")                          // Décomposer les accents
+                    .replace(/[\u0300-\u036f]/g, '') || 'autres'; // Enlever les accents et fallback sur 'autres'
+
+                // Initialiser les compteurs si l'UAI n'existe pas encore
                 if (!candidaturesParLycee[uai]) {
-                    candidaturesParLycee[uai] = 0;
+                    candidaturesParLycee[uai] = { generale: 0, sti2d: 0, autres: 0 };
                 }
-                candidaturesParLycee[uai]++;
+
+                // Incrémenter les compteurs selon la série de diplôme
+                if (serieDiplomeCode === 'generale') {
+                    candidaturesParLycee[uai].generale++;
+                } else if (serieDiplomeCode === 'sti2d') {
+                    candidaturesParLycee[uai].sti2d++;
+                } else {
+                    candidaturesParLycee[uai].autres++;
+                }
             }
         }
     });
 
-    console.log(`Candidatures par lycée toutes années confondues:`, candidaturesParLycee);
-
     return candidaturesParLycee;
 };
-
 
 let C = {};
 
@@ -95,9 +96,9 @@ let V = {
     map: document.querySelector("#map")
 };
 
-V.init = function(lyceesData){
+V.init = function(lyceesData, candidatsData){
     V.renderHeader();
-    V.renderMap(lyceesData);
+    V.renderMap(lyceesData, candidatsData);
 }
 
 V.renderHeader= function(){

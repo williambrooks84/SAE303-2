@@ -4,9 +4,10 @@ import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
 
-let MapView = {};
+const MapView = {};
 
-MapView.render = function(lyceesData, candidaturesParLycee) {
+// Fonction pour afficher la carte
+MapView.render = function (lyceesData, candidaturesParLycee) {
     const map = L.map('map').setView([45.83, 1.26], 6);  // Coordonnées de Limoges, zoom initial à l'échelle de la France
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -14,12 +15,14 @@ MapView.render = function(lyceesData, candidaturesParLycee) {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    MapView.addMarkersForLycees(map, lyceesData, candidaturesParLycee); // Ajouter les pointeurs sur la carte
+    // Ajouter les marqueurs
+    MapView.addMarkersForLycees(map, lyceesData, candidaturesParLycee);
 
     return map;
 };
 
-MapView.addMarkersForLycees = function(map, lyceesData, candidaturesParLycee) {
+// Fonction pour ajouter les marqueurs sur la carte
+MapView.addMarkersForLycees = function (map, lyceesData, candidaturesParLycee) {
     const markers = L.markerClusterGroup({
         zoomToBoundsOnClick: false // Désactiver le zoom automatique sur les clusters
     });
@@ -29,24 +32,46 @@ MapView.addMarkersForLycees = function(map, lyceesData, candidaturesParLycee) {
             const latitude = parseFloat(lycee.latitude);
             const longitude = parseFloat(lycee.longitude); // Convertir les valeurs dans des nombres décimaux utilisables
             if (!isNaN(latitude) && !isNaN(longitude)) {
-                const nombreCandidatures = candidaturesParLycee[lycee.numero_uai] || 0;
+                const numeroUAI = lycee.numero_uai;
+
+                const nombreCandidatures = candidaturesParLycee[numeroUAI] || { generale: 0, sti2d: 0, autres: 0 };
+                const detailFiliere = nombreCandidatures || { generale: 0, sti2d: 0, autres: 0 };
+
+                // Création du marqueur avec les informations détaillées
                 const marker = L.marker([latitude, longitude])
-                    .bindPopup(`<b>${lycee.appellation_officielle}</b><br>Candidatures: ${nombreCandidatures}`); // Afficher la bulle
-                marker.candidatures = nombreCandidatures; // Ajouter le nombre de candidatures à l'objet marker
+                    .bindPopup(`
+                        <b>${lycee.appellation_officielle}</b><br>
+                        Candidatures totales: ${Object.values(detailFiliere).reduce((sum, val) => sum + val, 0)}<br>
+                        Générale: ${detailFiliere.generale}<br>
+                        STI2D: ${detailFiliere.sti2d}<br>
+                        Autre: ${detailFiliere.autres}
+                    `); // Afficher les détails par filière
+
+                marker.candidaturesFiliere = detailFiliere; // Ajouter le détail des candidatures par filière à l'objet marker
                 markers.addLayer(marker);
             }
         });
     }
 
-    markers.on('clusterclick', function(event) {
+    markers.on('clusterclick', function (event) {
         const cluster = event.propagatedFrom;
-        let totalCandidatures = 0;
+        let totalCandidaturesGenerale = 0;
+        let totalCandidaturesSTI2D = 0;
+        let totalCandidaturesAutres = 0;
 
         cluster.getAllChildMarkers().forEach(marker => {
-            totalCandidatures += marker.candidatures;
+            totalCandidaturesGenerale += marker.candidaturesFiliere.generale || 0;
+            totalCandidaturesSTI2D += marker.candidaturesFiliere.sti2d || 0;
+            totalCandidaturesAutres += marker.candidaturesFiliere.autres || 0;
         });
 
-        cluster.bindPopup(`Total Candidatures: ${totalCandidatures}`).openPopup();
+        cluster.bindPopup(`
+            Total Candidatures: ${totalCandidaturesGenerale + totalCandidaturesSTI2D + totalCandidaturesAutres}<br>
+            Détails par filière:<br>
+            Générale: ${totalCandidaturesGenerale}<br>
+            STI2D: ${totalCandidaturesSTI2D}<br>
+            Autre: ${totalCandidaturesAutres}
+        `).openPopup();
     });
 
     map.addLayer(markers);
