@@ -69,7 +69,6 @@ M.countCandidaturesByLycee = async function(candidatsData) {
         }
     });
 
-  
     return candidaturesParLycee;
 };
 
