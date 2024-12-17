@@ -22,14 +22,20 @@ M.filterLyceesWithCandidatures = async function(lyceesData) {
     let lyceesAvecCandidatures = new Set();
 
     for (let candidat of candidatsData) {
-        // Vérifier si le candidate contient un array Scolarite et si le premier élément contient une propriété UAIEtablissementorigine
+        // Vérifier si le candidat contient un array Scolarite et si le premier élément contient une propriété UAIEtablissementorigine
         if (candidat.Scolarite && candidat.Scolarite[0] && candidat.Scolarite[0].UAIEtablissementorigine) {
             // Ajouter la valeur UAIEtablissementorigine à lyceesAvecCandidatures
             lyceesAvecCandidatures.add(candidat.Scolarite[0].UAIEtablissementorigine);
         }
     }
 
-    return lyceesData.filter(lycee => lyceesAvecCandidatures.has(lycee.numero_uai));
+    // Trier lyceesAvecCandidatures par ordre alphabétique
+    let sortedLyceesAvecCandidatures = Array.from(lyceesAvecCandidatures).sort();
+
+    console.log(sortedLyceesAvecCandidatures);
+
+    // Filtrer et retourner les lycées par ordre alphabétique des numero_uai
+    return lyceesData.filter(lycee => sortedLyceesAvecCandidatures.includes(lycee.numero_uai));
 };
 
 M.countCandidaturesByLycee = async function(candidatsData) {
