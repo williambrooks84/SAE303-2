@@ -25,6 +25,20 @@ Postaux.getByCodePostal = function(code_postal){
     return data.find(postal => postal.code_postal === code_postal);
 }
 
+Postaux.getDepartements = function() {
+    let departments = [];
+    let seen = new Set();
+    for (let postal of data) {
+        let codePostal = postal.code_postal;
+        if ((codePostal.endsWith("000") || codePostal === "98800") && codePostal !== "98000" && !seen.has(codePostal)) {
+            let [lat, lng] = postal._geopoint.split(',').map(parseFloat);
+            departments.push({ code_postal: codePostal, lat: lat, lng: lng });
+            seen.add(codePostal);
+        }
+    }
+    return departments;
+}
+
 Postaux.binarySearch = function(code_postal){
     let min = 0;
     let max = data.length - 1;

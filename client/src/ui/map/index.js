@@ -7,21 +7,24 @@ import 'leaflet.markercluster';
 const MapView = {};
 
 // Fonction pour afficher la carte
-MapView.render = function (lyceesData, candidaturesParLycee) {
-    const map = L.map('map').setView([45.83, 1.26], 6);  // Coordonnées de Limoges, zoom initial à l'échelle de la France
+MapView.render = function (lyceesData, candidaturesParLycee, postBacsData) {
+    const map = L.map('map').setView([45.83, 1.26], 6); // Coordonnées de Limoges, zoom initial à l'échelle de la France
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Ajouter les marqueurs
+    // Ajouter les marqueurs pour les lycées
     MapView.addMarkersForLycees(map, lyceesData, candidaturesParLycee);
+
+    // Ajouter les marqueurs pour les établissements post-bac
+    MapView.addMarkersForPostBacs(map, postBacsData);
 
     return map;
 };
 
-// Fonction pour ajouter les marqueurs sur la carte
+// Fonction pour ajouter les marqueurs des lycées sur la carte
 MapView.addMarkersForLycees = function (map, lyceesData, totalCandidats) {
     const markers = L.markerClusterGroup({
         zoomToBoundsOnClick: false // Désactiver le zoom automatique sur les clusters
@@ -56,31 +59,40 @@ MapView.addMarkersForLycees = function (map, lyceesData, totalCandidats) {
         });
     }
 
-    // Ajouter un événement pour gérer le clic sur un cluster
-    markers.on('clusterclick', function (event) {
-        const cluster = event.layer;
-        let totalCandidaturesCluster = 0;
-        let totalGenerale = 0;
-        let totalSTI2D = 0;
-        let totalAutre = 0;
+    map.addLayer(markers);
+};
 
-        // Calculer les totaux des candidatures dans le cluster
-        cluster.getAllChildMarkers().forEach(marker => {
-            totalCandidaturesCluster += marker.stats.total || 0;
-            totalGenerale += marker.stats.generale || 0;
-            totalSTI2D += marker.stats.sti2d || 0;
-            totalAutre += marker.stats.autre || 0;
-        });
-
-        // Afficher le total des candidatures dans le cluster
-        cluster.bindPopup(`
-            <b>Nombre total de candidatures:</b> ${totalCandidaturesCluster}<br>
-            <b>Détails par filière:</b><br>
-            - Générale: ${totalGenerale}<br>
-            - STI2D: ${totalSTI2D}<br>
-            - Autre: ${totalAutre}
-        `).openPopup();
+// Fonction pour ajouter les marqueurs des établissements post-bac sur la carte
+MapView.addMarkersForPostBacs = function (map, postBacsData) {
+    const markers = L.markerClusterGroup({
+        zoomToBoundsOnClick: false // Désactiver le zoom automatique sur les clusters
     });
+
+    if (Array.isArray(postBacsData)) {
+        postBacsData.forEach(postBac => {
+            const latitude = parseFloat(postBac.lat);
+            const longitude = parseFloat(postBac.lng);
+            if (!isNaN(latitude) && !isNaN(longitude)) {
+                const postBacsCount = postBac.postBacs || 0;
+
+                const redIcon = new L.Icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                });
+
+                const marker = L.marker([latitude, longitude], { icon: redIcon })
+                    .bindPopup(`
+                        <b>Département:</b> ${postBac.deptCode}<br>
+                        <b>Nombre de candidatures post-bac:</b> ${postBacsCount}
+                    `);
+
+                markers.addLayer(marker);
+            }
+        });
+    }
 
     map.addLayer(markers);
 };

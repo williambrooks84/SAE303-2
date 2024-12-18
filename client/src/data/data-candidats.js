@@ -1,3 +1,5 @@
+import { Postaux } from "./data-postaux.js";
+
 let data = await fetch("./src/data/json/candidatures.json");
 data = await data.json();
 
@@ -62,7 +64,23 @@ Candidats.getPostBacsByDepartment = function() {
             index[departement]++;
         }
     }
-    return index;
+
+    // Associate with departments from Postaux
+    let departments = Postaux.getDepartements();
+    let result = [];
+    for (let dept of departments) {
+        let deptCode = dept.code_postal.slice(0, 2);
+        result.push({
+            deptCode: deptCode,
+            ...dept,
+            postBacs: index[deptCode] || 0
+        });
+    }
+
+    // Exclude departments with 0 postBacs
+    result = result.filter(dept => dept.postBacs > 0);
+
+    return result;
 };
 
 export { Candidats };

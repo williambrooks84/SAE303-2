@@ -40,7 +40,6 @@ V.renderHeader= function(){
 
 V.renderMap = async function(lyceesData, totalCandidats, postBacsByDepartment){ 
     // Affichage de la carte avec les données
-    console.log(lyceesData);
     V.map = MapView.render(lyceesData, totalCandidats, postBacsByDepartment);
 };
 
