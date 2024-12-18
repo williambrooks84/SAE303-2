@@ -22,9 +22,17 @@ Candidats.getTotalCandidatesByLycee = function() {
     for (let candidat of data) {
         let uai = candidat.Scolarite[0].UAIEtablissementorigine;
         if (!index[uai]) {
-            index[uai] = 0;
+            index[uai] = { total: 0, generale: 0, sti2d: 0, autre: 0 };
         }
-        index[uai]++;
+        index[uai].total++;
+        let filiere = candidat.Baccalaureat.SerieDiplomeLibelle;
+        if (filiere === "Série Générale") {
+            index[uai].generale++;
+        } else if (filiere === "Sciences et Technologies de l'Industrie et du Développement Durable") {
+            index[uai].sti2d++;
+        } else {
+            index[uai].autre++;
+        }
     }
     return index;
 }

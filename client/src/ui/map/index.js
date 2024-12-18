@@ -34,18 +34,22 @@ MapView.addMarkersForLycees = function (map, lyceesData, totalCandidats) {
             if (!isNaN(latitude) && !isNaN(longitude)) {
                 const numeroUAI = lycee.numero_uai;
 
-                // Récupérer le total des candidatures pour ce lycée
-                const total = totalCandidats[numeroUAI] || 0;
+                // Récupérer les candidatures pour ce lycée
+                const stats = totalCandidats[numeroUAI] || { total: 0, generale: 0, sti2d: 0, autre: 0 };
 
-                // Création du marqueur avec les informations
+                // Création du marqueur avec les informations détaillées
                 const marker = L.marker([latitude, longitude])
                     .bindPopup(`
                         <b>${lycee.appellation_officielle}</b><br>
-                        Nombre de candidatures: ${total}
-                    `); // Afficher les détails totaux pour ce lycée
+                        <b>Nombre total de candidatures:</b> ${stats.total}<br>
+                        <b>Détails par filière:</b><br>
+                        - Générale: ${stats.generale}<br>
+                        - STI2D: ${stats.sti2d}<br>
+                        - Autre: ${stats.autre}
+                    `); // Afficher les détails par filière pour ce lycée
 
-                // Ajouter le nombre de candidatures au marqueur
-                marker.totalCandidatures = total;
+                // Ajouter les statistiques au marqueur
+                marker.stats = stats;
 
                 markers.addLayer(marker);
             }
@@ -56,15 +60,25 @@ MapView.addMarkersForLycees = function (map, lyceesData, totalCandidats) {
     markers.on('clusterclick', function (event) {
         const cluster = event.layer;
         let totalCandidaturesCluster = 0;
+        let totalGenerale = 0;
+        let totalSTI2D = 0;
+        let totalAutre = 0;
 
-        // Calculer le total des candidatures dans le cluster
+        // Calculer les totaux des candidatures dans le cluster
         cluster.getAllChildMarkers().forEach(marker => {
-            totalCandidaturesCluster += marker.totalCandidatures || 0;
+            totalCandidaturesCluster += marker.stats.total || 0;
+            totalGenerale += marker.stats.generale || 0;
+            totalSTI2D += marker.stats.sti2d || 0;
+            totalAutre += marker.stats.autre || 0;
         });
 
         // Afficher le total des candidatures dans le cluster
         cluster.bindPopup(`
-            Nombre de candidatures: ${totalCandidaturesCluster}
+            <b>Nombre total de candidatures:</b> ${totalCandidaturesCluster}<br>
+            <b>Détails par filière:</b><br>
+            - Générale: ${totalGenerale}<br>
+            - STI2D: ${totalSTI2D}<br>
+            - Autre: ${totalAutre}
         `).openPopup();
     });
 
