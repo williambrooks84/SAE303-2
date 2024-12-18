@@ -1,21 +1,9 @@
 
+import {Candidats} from './data-candidats.js';
 
 let data = await fetch("./src/data/json/lycees.json");
 data = await data.json();
 
-data.shift();
-
-let compare = function(a,b){
-    if(a.numero_uai < b.numero_uai){
-        return -1;
-    }
-    if(a.numero_uai > b.numero_uai){
-        return 1;
-    }
-    return 0;
-}
-
-data.sort(compare);
 
 let Lycees = {}
 
@@ -41,5 +29,36 @@ Lycees.binarySearch = function(numero_uai){
         }
     }
 }
+
+
+let filterLyceesWithCandidatures = function() {
+    let result = [];
+    for (let lycee of data) {
+        if (Candidats.uaiSearch(lycee.numero_uai) > 0) {
+            result.push(lycee);
+        }
+    }
+    return result;
+};
+
+
+let compare = function(a,b){
+    if(a.numero_uai < b.numero_uai){
+        return -1;
+    }
+    if(a.numero_uai > b.numero_uai){
+        return 1;
+    }
+    return 0;
+}
+
+
+
+data.shift();
+
+data = filterLyceesWithCandidatures();
+
+data.sort(compare);
+
 
 export { Lycees };

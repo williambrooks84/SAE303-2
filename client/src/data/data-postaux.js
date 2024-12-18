@@ -3,6 +3,18 @@
 let data = await fetch("./src/data/json/postaux.json");
 data = await data.json();
 
+let compare = function(a,b){
+    if(a.code_postal < b.code_postal){
+        return -1;
+    }
+    if(a.code_postal > b.code_postal){
+        return 1;
+    }
+    return 0;
+}
+
+data.sort(compare);
+
 let Postaux = {}
 
 Postaux.getAll = function(){
