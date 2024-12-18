@@ -27,13 +27,15 @@ MapView.render = function (lyceesData, candidaturesParLycee, postBacsData) {
 // Fonction pour ajouter les marqueurs des lycées sur la carte
 MapView.addMarkersForLycees = function (map, lyceesData, totalCandidats) {
     const markers = L.markerClusterGroup({
-        zoomToBoundsOnClick: false // Désactiver le zoom automatique sur les clusters
+        zoomToBoundsOnClick: false, // Désactiver le zoom automatique sur les clusters
+        spiderfyOnMaxZoom: true, // Ouvrir les marqueurs individuellement lors d'un zoom élevé
+        showCoverageOnHover: false // Ne pas afficher la couverture au survol
     });
 
     if (Array.isArray(lyceesData)) {
         lyceesData.forEach(lycee => {
             const latitude = parseFloat(lycee.latitude);
-            const longitude = parseFloat(lycee.longitude); // Convertir les valeurs dans des nombres décimaux utilisables
+            const longitude = parseFloat(lycee.longitude); // Convertir les valeurs en nombres décimaux utilisables
             if (!isNaN(latitude) && !isNaN(longitude)) {
                 const numeroUAI = lycee.numero_uai;
 
@@ -59,13 +61,40 @@ MapView.addMarkersForLycees = function (map, lyceesData, totalCandidats) {
         });
     }
 
+    // Ajouter l'écouteur d'événement pour les clusters
+    markers.on('clusterclick', function (event) {
+        const cluster = event.propagatedFrom;
+        const clusterMarkers = cluster.getAllChildMarkers(); // Récupérer les marqueurs contenus dans le cluster
+
+        let totalStats = { total: 0, generale: 0, sti2d: 0, autre: 0 };
+
+        clusterMarkers.forEach(marker => {
+            const markerStats = marker.stats; // Récupérer les stats associées au marqueur
+            totalStats.total += markerStats.total;
+            totalStats.generale += markerStats.generale;
+            totalStats.sti2d += markerStats.sti2d;
+            totalStats.autre += markerStats.autre;
+        });
+
+        // Afficher les totaux dans le popup du cluster
+        cluster.bindPopup(`
+            <b>Total de candidatures:</b><br>
+            - Total: ${totalStats.total}<br>
+            - Générale: ${totalStats.generale}<br>
+            - STI2D: ${totalStats.sti2d}<br>
+            - Autre: ${totalStats.autre}
+        `).openPopup(); // Ouvrir le popup du cluster
+    });
+
     map.addLayer(markers);
 };
 
 // Fonction pour ajouter les marqueurs des établissements post-bac sur la carte
 MapView.addMarkersForPostBacs = function (map, postBacsData) {
     const markers = L.markerClusterGroup({
-        zoomToBoundsOnClick: false // Désactiver le zoom automatique sur les clusters
+        zoomToBoundsOnClick: false, // Désactiver le zoom automatique sur les clusters
+        spiderfyOnMaxZoom: true, // Permet l'affichage des popups pour chaque marqueur lorsque le zoom est au max
+        showCoverageOnHover: false // Ne pas afficher le contenu des clusters au survol
     });
 
     if (Array.isArray(postBacsData)) {
@@ -95,6 +124,12 @@ MapView.addMarkersForPostBacs = function (map, postBacsData) {
     }
 
     map.addLayer(markers);
+
+    // Ajouter l'écouteur d'événement pour les clusters
+    markers.on('clusterclick', function (event) {
+        const cluster = event.propagatedFrom;
+        map.fitBounds(cluster.getBounds()); // Zoom sur les limites du cluster
+    });
 };
 
 export { MapView };
