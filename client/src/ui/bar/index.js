@@ -2,17 +2,43 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 
+// Fonction principale de la vue BarChart
 let BarView = {
-  render: function (id, lyceesData, totalCandidats, postBacsByDepartment) {
-    am5.ready(function () {
-      // Create root element
-      var root = am5.Root.new(id);
+  combineDataForGraph: function (totalCandidatsByDepartment) {
+    let data = totalCandidatsByDepartment.map(deptData => ({
+      department: deptData.department,
+      postBacs: deptData.postBacs, // Utilisation directe des données de postBacs
+      generale: deptData.generale,
+      sti2d: deptData.sti2d,
+      autre: deptData.autre,
+    }));
 
-      // Add theme
+    // Assurez-vous d'ajouter le département 98 même s'il est déjà présent
+    if (!data.some((d) => d.department === "98")) {
+      data.push({
+        department: "98",
+        postBacs: 0, // Si non présent, ajouter 0 explicitement
+        generale: 0,
+        sti2d: 0,
+        autre: 0,
+      });
+    }
+
+    data.sort((a, b) => a.department.localeCompare(b.department));
+
+    console.log("Données finales pour le graphique :", data);
+
+    return data;
+  },
+
+  render: function (id, totalCandidatsByDepartment) {
+    let self = this;
+    am5.ready(function () {
+      let root = am5.Root.new(id);
+
       root.setThemes([am5themes_Animated.new(root)]);
 
-      // Create chart
-      var chart = root.container.children.push(
+      let chart = root.container.children.push(
         am5xy.XYChart.new(root, {
           panX: false,
           panY: false,
@@ -23,7 +49,6 @@ let BarView = {
         })
       );
 
-      // Add scrollbar
       chart.set(
         "scrollbarY",
         am5.Scrollbar.new(root, {
@@ -31,49 +56,12 @@ let BarView = {
         })
       );
 
-      // Map department codes to UAIs
-      let departmentMap = {};
-      lyceesData.forEach((lycee) => {
-        const deptCode = lycee.code_departement;
-        const uai = lycee.numero_uai;
-        if (!departmentMap[deptCode]) {
-          departmentMap[deptCode] = [];
-        }
-        departmentMap[deptCode].push(uai);
-      });
+      let data = self.combineDataForGraph(totalCandidatsByDepartment);
 
-      // Aggregate data for the chart
-      let data = postBacsByDepartment.map((dept) => {
-        let deptCode = dept.deptCode;
-        let postBacs = dept.postBacs || 0;
+      console.log("Data for bar chart:", data);
 
-        let totaleGenerale = 0,
-          totaleSTI2D = 0,
-          totaleAutre = 0;
-
-        if (departmentMap[deptCode]) {
-          departmentMap[deptCode].forEach((uai) => {
-            let candidats = totalCandidats[uai] || { generale: 0, sti2d: 0, autre: 0 };
-            totaleGenerale += candidats.generale || 0;
-            totaleSTI2D += candidats.sti2d || 0;
-            totaleAutre += candidats.autre || 0;
-          });
-        }
-
-        return {
-          department: `Dept ${deptCode}`,
-          postBacs: postBacs,
-          generale: totaleGenerale,
-          sti2d: totaleSTI2D,
-          autre: totaleAutre,
-        };
-      });
-
-      console.log("Données finales pour le graphique :", data);
-
-      // Create axes
-      var yRenderer = am5xy.AxisRendererY.new(root, {});
-      var yAxis = chart.yAxes.push(
+      let yRenderer = am5xy.AxisRendererY.new(root, {});
+      let yAxis = chart.yAxes.push(
         am5xy.CategoryAxis.new(root, {
           categoryField: "department",
           renderer: yRenderer,
@@ -87,7 +75,7 @@ let BarView = {
 
       yAxis.data.setAll(data);
 
-      var xAxis = chart.xAxes.push(
+      let xAxis = chart.xAxes.push(
         am5xy.ValueAxis.new(root, {
           min: 0,
           maxPrecision: 0,
@@ -97,17 +85,15 @@ let BarView = {
         })
       );
 
-      // Add legend
-      var legend = chart.children.push(
+      let legend = chart.children.push(
         am5.Legend.new(root, {
           centerX: am5.p50,
           x: am5.p50,
         })
       );
 
-      // Add series
       function makeSeries(name, fieldName) {
-        var series = chart.series.push(
+        let series = chart.series.push(
           am5xy.ColumnSeries.new(root, {
             name: name,
             stacked: true,
@@ -125,7 +111,6 @@ let BarView = {
         });
         series.data.setAll(data);
 
-        // Make stuff animate on load
         series.appear();
 
         series.bullets.push(function () {
@@ -143,15 +128,13 @@ let BarView = {
         legend.data.push(series);
       }
 
-      // Add series for each category
       makeSeries("Post-Bacs", "postBacs");
       makeSeries("Générale", "generale");
       makeSeries("STI2D", "sti2d");
       makeSeries("Autre", "autre");
 
-      // Animate chart on load
       chart.appear(1000, 100);
-    }); // end am5.ready()
+    });
   },
 };
 

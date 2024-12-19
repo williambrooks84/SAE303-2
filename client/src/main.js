@@ -18,7 +18,8 @@ C.init = async function(){
     let lyceesData = M.lycees.getAll();
     let totalCandidats = M.candidats.getTotalCandidatesByLycee();
     let postBacsByDepartment = M.candidats.getPostBacsByDepartment();
-    V.init(lyceesData, totalCandidats, postBacsByDepartment);
+    let totalCandidatsByDepartment = M.candidats.getTotalCandidatsByDepartment();
+    V.init(lyceesData, totalCandidats, postBacsByDepartment, totalCandidatsByDepartment);
     //console.log(Candidats.getAll());
     //console.log(Lycees.getAll());
     //console.log(totalCandidats);
@@ -31,10 +32,10 @@ let V = {
     bar: document.querySelector("#bar")
 };
 
-V.init = function(lyceesData, totalCandidats, postBacsByDepartment){
+V.init = function(lyceesData, totalCandidats, postBacsByDepartment, totalCandidatsByDepartment){
     V.renderHeader();
     V.renderMap(lyceesData, totalCandidats, postBacsByDepartment);
-    V.renderBar(lyceesData, totalCandidats, postBacsByDepartment);
+    V.renderBar(totalCandidatsByDepartment);
 }
 
 V.renderHeader= function(){
@@ -46,12 +47,9 @@ V.renderMap = async function(lyceesData, totalCandidats, postBacsByDepartment){
     V.map = MapView.render(lyceesData, totalCandidats, postBacsByDepartment);
 };
 
-V.renderBar = async function(lyceesData, totalCandidats, postBacsByDepartment){
+V.renderBar = async function(totalCandidatsByDepartment){
     // Affichage du graphique
-    V.bar = BarView.render("barchart", lyceesData, totalCandidats, postBacsByDepartment);
-    console.log(lyceesData);
-    console.log(totalCandidats);
-    console.log(postBacsByDepartment);
+    V.bar = BarView.render("barchart", totalCandidatsByDepartment);
 }
 
 C.init();

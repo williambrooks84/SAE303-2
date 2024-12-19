@@ -52,10 +52,11 @@ Candidats.getPostBacs = function() {
 Candidats.getPostBacsByDepartment = function() {
     let index = {};
     let postBacs = Candidats.getPostBacs();
+    
     for (let candidate of postBacs) {
-        // Fallback for the codePostal
         let codePostal = candidate.Scolarite?.[0]?.CommuneEtablissementOrigineCodePostal || 
                          candidate.Scolarite?.[1]?.CommuneEtablissementOrigineCodePostal;
+
         if (codePostal) {
             let departement = codePostal.slice(0, 2);
             if (!index[departement]) {
@@ -64,10 +65,9 @@ Candidats.getPostBacsByDepartment = function() {
             index[departement]++;
         }
     }
-
-    // Associate with departments from Postaux
     let departments = Postaux.getDepartements();
     let result = [];
+    
     for (let dept of departments) {
         let deptCode = dept.code_postal.slice(0, 2);
         result.push({
@@ -77,10 +77,67 @@ Candidats.getPostBacsByDepartment = function() {
         });
     }
 
-    // Exclude departments with 0 postBacs
     result = result.filter(dept => dept.postBacs > 0);
 
     return result;
 };
+
+// Fonction pour fusionner les données de candidats par département
+Candidats.getTotalCandidatsByDepartment = function() {
+    let index = {};
+    let postBacs = Candidats.getPostBacsByDepartment();
+    
+    for (let candidate of data) {
+        let uai = candidate.Scolarite?.[0]?.UAIEtablissementorigine; // Récupération de l'UAI
+        let codePostal = candidate.Scolarite?.[0]?.CommuneEtablissementOrigineCodePostal || 
+                         candidate.Scolarite?.[1]?.CommuneEtablissementOrigineCodePostal;
+
+        if (codePostal && uai) {
+            let deptCode = codePostal.slice(0, 2); // Code départemental à partir du code postal
+            if (!index[deptCode]) {
+                index[deptCode] = { total: 0, generale: 0, sti2d: 0, autre: 0, postBacs: 0 };
+            }
+            index[deptCode].total++;
+            let filiere = candidate.Baccalaureat.SerieDiplomeLibelle;
+            if (filiere === "Série Générale") {
+                index[deptCode].generale++;
+            } else if (filiere === "Sciences et Technologies de l'Industrie et du Développement Durable") {
+                index[deptCode].sti2d++;
+            } else {
+                index[deptCode].autre++;
+            }
+        }
+    }
+
+    // Ajouter les données des post-bacs par département
+    for (let deptData of postBacs) {
+        if (index[deptData.deptCode]) {
+            index[deptData.deptCode].postBacs += deptData.postBacs; // Additionner les post-bacs
+        }
+    }
+
+    let departments = Postaux.getDepartements(); // Les départements connus
+    let result = [];
+
+    for (let dept of departments) {
+        let deptCode = dept.code_postal.slice(0, 2);
+        result.push({
+            department: deptCode,
+            ...dept,
+            total: index[deptCode]?.total || 0,
+            generale: index[deptCode]?.generale || 0,
+            sti2d: index[deptCode]?.sti2d || 0,
+            autre: index[deptCode]?.autre || 0,
+            postBacs: index[deptCode]?.postBacs || 0
+        });
+    }
+
+    // Filtrer pour les départements avec des données > 0
+    result = result.filter(dept => dept.postBacs > 0);
+
+    return result;
+};
+console.log(Candidats.getTotalCandidatsByDepartment());
+
 
 export { Candidats };
