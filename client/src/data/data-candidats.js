@@ -88,12 +88,12 @@ Candidats.getTotalCandidatsByDepartment = function() {
     let postBacs = Candidats.getPostBacsByDepartment();
     
     for (let candidate of data) {
-        let uai = candidate.Scolarite?.[0]?.UAIEtablissementorigine; // Récupération de l'UAI
+        let uai = candidate.Scolarite?.[0]?.UAIEtablissementorigine; 
         let codePostal = candidate.Scolarite?.[0]?.CommuneEtablissementOrigineCodePostal || 
                          candidate.Scolarite?.[1]?.CommuneEtablissementOrigineCodePostal;
 
         if (codePostal && uai) {
-            let deptCode = codePostal.slice(0, 2); // Code départemental à partir du code postal
+            let deptCode = codePostal.slice(0, 2); 
             if (!index[deptCode]) {
                 index[deptCode] = { total: 0, generale: 0, sti2d: 0, autre: 0, postBacs: 0 };
             }
@@ -109,14 +109,13 @@ Candidats.getTotalCandidatsByDepartment = function() {
         }
     }
 
-    // Ajouter les données des post-bacs par département
     for (let deptData of postBacs) {
         if (index[deptData.deptCode]) {
-            index[deptData.deptCode].postBacs += deptData.postBacs; // Additionner les post-bacs
+            index[deptData.deptCode].postBacs += deptData.postBacs; 
         }
     }
 
-    let departments = Postaux.getDepartements(); // Les départements connus
+    let departments = Postaux.getDepartements();
     let result = [];
 
     for (let dept of departments) {
@@ -132,12 +131,11 @@ Candidats.getTotalCandidatsByDepartment = function() {
         });
     }
 
-    // Filtrer pour les départements avec des données > 0
     result = result.filter(dept => dept.postBacs > 0);
+
+    result.sort((a, b) => a.total - b.total);
 
     return result;
 };
-console.log(Candidats.getTotalCandidatsByDepartment());
-
 
 export { Candidats };

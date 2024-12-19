@@ -24,10 +24,6 @@ let BarView = {
       });
     }
 
-    data.sort((a, b) => a.department.localeCompare(b.department));
-
-    console.log("Données finales pour le graphique :", data);
-
     return data;
   },
 
@@ -57,8 +53,6 @@ let BarView = {
       );
 
       let data = self.combineDataForGraph(totalCandidatsByDepartment);
-
-      console.log("Data for bar chart:", data);
 
       let yRenderer = am5xy.AxisRendererY.new(root, {});
       let yAxis = chart.yAxes.push(
