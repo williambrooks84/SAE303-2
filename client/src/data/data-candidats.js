@@ -83,7 +83,7 @@ Candidats.getPostBacsByDepartment = function() {
 };
 
 // Fonction pour fusionner les données de candidats par département
-Candidats.getTotalCandidatsByDepartment = function() {
+Candidats.getTotalCandidatsByDepartment = function(seuil) {
     let index = {};
     let postBacs = Candidats.getPostBacsByDepartment();
     
@@ -118,10 +118,11 @@ Candidats.getTotalCandidatsByDepartment = function() {
 
     let departments = Postaux.getDepartements();
     let result = [];
+    let autresDepartements = { department: "Autres départements", total: 0, generale: 0, sti2d: 0, autre: 0, postBacs: 0 };
 
     for (let dept of departments) {
         let deptCode = dept.code_postal.slice(0, 2);
-        result.push({
+        let deptData = {
             department: deptCode,
             ...dept,
             total: index[deptCode]?.total || 0,
@@ -129,7 +130,21 @@ Candidats.getTotalCandidatsByDepartment = function() {
             sti2d: index[deptCode]?.sti2d || 0,
             autre: index[deptCode]?.autre || 0,
             postBacs: index[deptCode]?.postBacs || 0
-        });
+        };
+
+        if (deptData.total < seuil) {
+            autresDepartements.total += deptData.total;
+            autresDepartements.generale += deptData.generale;
+            autresDepartements.sti2d += deptData.sti2d;
+            autresDepartements.autre += deptData.autre;
+            autresDepartements.postBacs += deptData.postBacs;
+        } else {
+            result.push(deptData);
+        }
+    }
+
+    if (autresDepartements.total > 0) {
+        result.push(autresDepartements);
     }
 
     result = result.filter(dept => dept.total > 0);
@@ -138,7 +153,5 @@ Candidats.getTotalCandidatsByDepartment = function() {
 
     return result;
 };
-
-console.log(Candidats.getTotalCandidatsByDepartment());
 
 export { Candidats };

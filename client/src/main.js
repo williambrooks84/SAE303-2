@@ -15,32 +15,35 @@ let M = {
 let C = {};
 
 C.init = async function(){
+    let slider = document.getElementById('slider');
+    let seuil = slider.value;
+    slider.addEventListener('change', async function() {
+        seuil = this.value;
+        let totalCandidatsByDepartment = M.candidats.getTotalCandidatsByDepartment(seuil);
+        V.renderBar(totalCandidatsByDepartment);
+    });
     let lyceesData = M.lycees.getAll();
     let totalCandidats = M.candidats.getTotalCandidatesByLycee();
     let postBacsByDepartment = M.candidats.getPostBacsByDepartment();
-    let totalCandidatsByDepartment = M.candidats.getTotalCandidatsByDepartment();
+    let totalCandidatsByDepartment = M.candidats.getTotalCandidatsByDepartment(seuil);
     V.init(lyceesData, totalCandidats, postBacsByDepartment, totalCandidatsByDepartment);
-    //console.log(Candidats.getAll());
-    //console.log(Lycees.getAll());
-    //console.log(totalCandidats);
-    //console.log(postBacsByDepartment);
-}
+};
 
 let V = {
     header: document.querySelector("#header"),
     map: document.querySelector("#map"),
-    bar: document.querySelector("#bar")
+    bar: document.querySelector("#bar"),
 };
 
 V.init = function(lyceesData, totalCandidats, postBacsByDepartment, totalCandidatsByDepartment){
     V.renderHeader();
     V.renderMap(lyceesData, totalCandidats, postBacsByDepartment);
     V.renderBar(totalCandidatsByDepartment);
-}
+};
 
 V.renderHeader= function(){
     V.header.innerHTML = HeaderView.render();
-}
+};
 
 V.renderMap = async function(lyceesData, totalCandidats, postBacsByDepartment){ 
     // Affichage de la carte avec les données
@@ -50,6 +53,6 @@ V.renderMap = async function(lyceesData, totalCandidats, postBacsByDepartment){
 V.renderBar = async function(totalCandidatsByDepartment){
     // Affichage du graphique
     V.bar = BarView.render("barchart", totalCandidatsByDepartment);
-}
+};
 
 C.init();

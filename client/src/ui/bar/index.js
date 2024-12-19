@@ -5,24 +5,15 @@ import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 // Fonction principale de la vue BarChart
 let BarView = {
   combineDataForGraph: function (totalCandidatsByDepartment) {
-    let data = totalCandidatsByDepartment.map(deptData => ({
-      department: deptData.department,
-      postBacs: deptData.postBacs, // Utilisation directe des données de postBacs
-      generale: deptData.generale,
-      sti2d: deptData.sti2d,
-      autre: deptData.autre,
-    }));
-
-    // Assurez-vous d'ajouter le département 98 même s'il est déjà présent
-    if (!data.some((d) => d.department === "98")) {
-      data.push({
-        department: "98",
-        postBacs: 0, // Si non présent, ajouter 0 explicitement
-        generale: 0,
-        sti2d: 0,
-        autre: 0,
-      });
-    }
+    let data = totalCandidatsByDepartment
+      .map(deptData => ({
+        department: deptData.department,
+        postBacs: deptData.postBacs,
+        generale: deptData.generale,
+        sti2d: deptData.sti2d,
+        autre: deptData.autre,
+      }))
+      .filter(deptData => deptData.postBacs > 0 || deptData.generale > 0 || deptData.sti2d > 0 || deptData.autre > 0); // Filtrer les départements avec des valeurs non nulles
 
     return data;
   },
@@ -30,6 +21,10 @@ let BarView = {
   render: function (id, totalCandidatsByDepartment) {
     let self = this;
     am5.ready(function () {
+      let existingRoot = am5.registry.rootElements.find(root => root.dom.id === id);
+      if (existingRoot) {
+        existingRoot.dispose();
+      }
       let root = am5.Root.new(id);
 
       root.setThemes([am5themes_Animated.new(root)]);
