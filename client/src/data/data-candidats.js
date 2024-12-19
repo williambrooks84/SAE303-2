@@ -112,6 +112,7 @@ Candidats.getTotalCandidatsByDepartment = function() {
     for (let deptData of postBacs) {
         if (index[deptData.deptCode]) {
             index[deptData.deptCode].postBacs += deptData.postBacs; 
+            index[deptData.deptCode].total += deptData.postBacs; // Add postBacs to total
         }
     }
 
@@ -131,11 +132,13 @@ Candidats.getTotalCandidatsByDepartment = function() {
         });
     }
 
-    result = result.filter(dept => dept.postBacs > 0);
+    result = result.filter(dept => dept.total > 0);
 
     result.sort((a, b) => a.total - b.total);
 
     return result;
 };
+
+console.log(Candidats.getTotalCandidatsByDepartment());
 
 export { Candidats };
