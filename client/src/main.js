@@ -15,54 +15,54 @@ let M = {
 let C = {};
 
 C.init = async function () {
-    // Référence aux sliders
-    let sliderBar = document.getElementById('sliderbar');
-    let sliderMap = document.getElementById('slidermap');
+  // Référence aux sliders
+  let sliderBar = document.getElementById('sliderbar');
+  let sliderMap = document.getElementById('slidermap');
 
-    // Récupérer les valeurs par défaut définies dans le HTML
-    let seuil = parseFloat(sliderBar.getAttribute('value'));
-    let rayon = parseFloat(sliderMap.getAttribute('value'));
+  // Récupérer les valeurs par défaut définies dans le HTML
+  let seuil = parseFloat(sliderBar.value);  // On utilise 'value' directement
+  let rayon = parseFloat(sliderMap.value);   // On utilise 'value' directement
 
-    // Vérifiez les valeurs initiales
-    if (isNaN(seuil) || seuil <= 0) seuil = 170; // Seuil par défaut
-    if (isNaN(rayon) || rayon <= 0) rayon = 50;  // Rayon par défaut
+  // Vérifiez les valeurs initiales
+  if (isNaN(seuil) || seuil <= 0) seuil = 170; // Seuil par défaut
+  if (isNaN(rayon) || rayon <= 0) rayon = 50;  // Rayon par défaut
 
-    // Initialisation des données pour la carte et le graphique
-    let lyceesData = M.lycees.getAll();
-    let totalCandidats = M.candidats.getTotalCandidatesByLycee();
-    let postBacsByDepartment = M.candidats.getPostBacsByDepartment();
-    let totalCandidatsByDepartment = M.candidats.getTotalCandidatsByDepartment(seuil);
+  // Initialisation des données pour la carte et le graphique
+  let lyceesData = M.lycees.getAll();
+  let totalCandidats = M.candidats.getTotalCandidatesByLycee();
+  let postBacsByDepartment = M.candidats.getPostBacsByDepartment();
+  let totalCandidatsByDepartment = M.candidats.getTotalCandidatsByDepartment(seuil);
 
-    // Écouteurs pour les sliders
-    sliderBar.addEventListener('change', async function () {
-        seuil = this.value;
-        if (isNaN(seuil) || seuil <= 0) seuil = 170;
+  // Appel à l'initialisation de la vue avec les valeurs récupérées
+  V.init(lyceesData, totalCandidats, postBacsByDepartment, totalCandidatsByDepartment, rayon);
 
-        let totalCandidatsByDepartment = M.candidats.getTotalCandidatsByDepartment(seuil);
-        V.renderBar(totalCandidatsByDepartment);
-    });
+  // Écouteurs pour les sliders
+  sliderBar.addEventListener('change', async function () {
+      seuil = parseFloat(this.value);
+      if (isNaN(seuil) || seuil <= 0) seuil = 170;
 
-    sliderMap.addEventListener('change', async function () {
-      rayon = parseFloat(this.value);
-  
-      // Ensure the radius value is valid
-      if (isNaN(rayon) || rayon <= 0) rayon = 50;
-  
-      // Update map view with the new radius
-      let totalCandidats = M.candidats.getTotalCandidatesByLycee();
-      V.renderMap(lyceesData, totalCandidats, postBacsByDepartment, rayon);
-  
-      // Recalculate the department data based on the new radius
-      let totalCandidatsByDepartment = M.candidats.getTotalCandidatsByDepartment(seuil);
-  
-      // Update the bar chart with the new data
+      // Mettre à jour les données
+      totalCandidatsByDepartment = M.candidats.getTotalCandidatsByDepartment(seuil);
+
+      // Met à jour la barre
       V.renderBar(totalCandidatsByDepartment);
   });
 
-    console.log(rayon);
+  sliderMap.addEventListener('change', async function () {
+      rayon = parseFloat(this.value);
+      if (isNaN(rayon) || rayon <= 0) rayon = 50;
 
-    // Appel à l'initialisation de la vue avec les valeurs récupérées
-    V.init(lyceesData, totalCandidats, postBacsByDepartment, totalCandidatsByDepartment, rayon);
+      // Met à jour la carte
+      let totalCandidats = M.candidats.getTotalCandidatesByLycee();
+      V.renderMap(lyceesData, totalCandidats, postBacsByDepartment, rayon);
+
+      // Met à jour la barre
+      totalCandidatsByDepartment = M.candidats.getTotalCandidatsByDepartment(seuil);
+      V.renderBar(totalCandidatsByDepartment);
+  });
+
+  // Initialisation du graphique Bar sur le chargement
+  V.renderBar(totalCandidatsByDepartment);  // Assurer que le graphique s'affiche au chargement avec les valeurs par défaut
 };
 
 
@@ -76,7 +76,7 @@ V.init = function (lyceesData, totalCandidats, postBacsByDepartment, totalCandid
 ) {
   V.renderHeader();
   V.renderMap(lyceesData, totalCandidats, postBacsByDepartment, rayon);
-  V.renderBar(totalCandidatsByDepartment);
+  V.renderBar(totalCandidatsByDepartment, rayon);
 };
 
 V.renderHeader = function () {
@@ -89,9 +89,9 @@ V.renderMap = async function (lyceesData, totalCandidats, postBacsByDepartment, 
   V.map = MapView.render(lyceesData, totalCandidats, postBacsByDepartment, rayon);
 };
 
-V.renderBar = async function (totalCandidatsByDepartment) {
+V.renderBar = async function (totalCandidatsByDepartment, rayon) {
   // Affichage du graphique
-  V.bar = BarView.render("barchart", totalCandidatsByDepartment);
+  V.bar = BarView.render("barchart", totalCandidatsByDepartment, rayon);
 };
 
 C.init();
