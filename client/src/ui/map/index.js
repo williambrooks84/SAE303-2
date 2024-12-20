@@ -5,27 +5,60 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
 
 const MapView = {};
+let map, circle, markersLycees, markersPostBacs;
 
 // Fonction pour afficher la carte
-MapView.render = function (lyceesData, candidaturesParLycee, postBacsData) {
-    const map = L.map('map').setView([45.83, 1.26], 6); // Coordonnées de Limoges, zoom initial à l'échelle de la France
+MapView.render = function (lyceesData, candidaturesParLycee, postBacsData, radius) {
+    console.log(radius);
+    if (isNaN(radius) || radius <= 0) {
+        console.error("Rayon non valide :", radius);
+        radius = 50; // Valeur par défaut
+    }
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) {
+        console.error("Map container not found");
+        return;
+    }
+
+    if (!map) {
+        map = L.map('map').setView([45.83, 1.26], 6); // Initialiser la carte
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+    }
+
+    const limogesCoords = [45.833619, 1.261105];
+
+    if (circle) {
+        map.removeLayer(circle);
+    }
+
+    // Création du cercle avec validation du rayon
+    circle = L.circle(limogesCoords, {
+        color: 'blue',
+        fillColor: '#add8e6',
+        fillOpacity: 0.5,
+        radius: radius * 1000 // Conversion du rayon en mètres
     }).addTo(map);
 
-    // Ajouter les marqueurs pour les lycées
-    MapView.addMarkersForLycees(map, lyceesData, candidaturesParLycee);
+    if (markersLycees) {
+        map.removeLayer(markersLycees);
+    }
+    markersLycees = MapView.addMarkersForLycees(map, lyceesData, candidaturesParLycee, limogesCoords, radius);
 
-    // Ajouter les marqueurs pour les établissements post-bac
-    MapView.addMarkersForPostBacs(map, postBacsData);
+    if (markersPostBacs) {
+        map.removeLayer(markersPostBacs);
+    }
+    markersPostBacs = MapView.addMarkersForPostBacs(map, postBacsData, limogesCoords, radius);
 
-    return map;
+    return { map, circle, radius };
 };
 
 // Fonction pour ajouter les marqueurs des lycées sur la carte
-MapView.addMarkersForLycees = function (map, lyceesData, totalCandidats) {
+MapView.addMarkersForLycees = function (map, lyceesData, totalCandidats, centerCoords, radius) {
     const markers = L.markerClusterGroup({
         zoomToBoundsOnClick: false, // Désactiver le zoom automatique sur les clusters
         spiderfyOnMaxZoom: true, // Ouvrir les marqueurs individuellement lors d'un zoom élevé
@@ -37,26 +70,29 @@ MapView.addMarkersForLycees = function (map, lyceesData, totalCandidats) {
             const latitude = parseFloat(lycee.latitude);
             const longitude = parseFloat(lycee.longitude); // Convertir les valeurs en nombres décimaux utilisables
             if (!isNaN(latitude) && !isNaN(longitude)) {
-                const numeroUAI = lycee.numero_uai;
+                const distance = map.distance(centerCoords, [latitude, longitude]) / 1000; // Distance en km
+                if (distance <= radius) {
+                    const numeroUAI = lycee.numero_uai;
 
-                // Récupérer les candidatures pour ce lycée
-                const stats = totalCandidats[numeroUAI] || { total: 0, generale: 0, sti2d: 0, autre: 0 };
+                    // Récupérer les candidatures pour ce lycée
+                    const stats = totalCandidats[numeroUAI] || { total: 0, generale: 0, sti2d: 0, autre: 0 };
 
-                // Création du marqueur avec les informations détaillées
-                const marker = L.marker([latitude, longitude])
-                    .bindPopup(`
-                        <b>${lycee.appellation_officielle}</b><br>
-                        <b>Nombre total de candidatures:</b> ${stats.total}<br>
-                        <b>Détails par filière:</b><br>
-                        - Générale: ${stats.generale}<br>
-                        - STI2D: ${stats.sti2d}<br>
-                        - Autre: ${stats.autre}
-                    `); // Afficher les détails par filière pour ce lycée
+                    // Création du marqueur avec les informations détaillées
+                    const marker = L.marker([latitude, longitude])
+                        .bindPopup(`
+                            <b>${lycee.appellation_officielle}</b><br>
+                            <b>Nombre total de candidatures:</b> ${stats.total}<br>
+                            <b>Détails par filière:</b><br>
+                            - Générale: ${stats.generale}<br>
+                            - STI2D: ${stats.sti2d}<br>
+                            - Autre: ${stats.autre}
+                        `); // Afficher les détails par filière pour ce lycée
 
-                // Ajouter les statistiques au marqueur
-                marker.stats = stats;
+                    // Ajouter les statistiques au marqueur
+                    marker.stats = stats;
 
-                markers.addLayer(marker);
+                    markers.addLayer(marker);
+                }
             }
         });
     }
@@ -87,10 +123,11 @@ MapView.addMarkersForLycees = function (map, lyceesData, totalCandidats) {
     });
 
     map.addLayer(markers);
+    return markers;
 };
 
 // Fonction pour ajouter les marqueurs des établissements post-bac sur la carte
-MapView.addMarkersForPostBacs = function (map, postBacsData) {
+MapView.addMarkersForPostBacs = function (map, postBacsData, centerCoords, radius) {
     const markers = L.markerClusterGroup({
         zoomToBoundsOnClick: false, // Désactiver le zoom automatique sur les clusters
         spiderfyOnMaxZoom: true, // Permet l'affichage des popups pour chaque marqueur lorsque le zoom est au max
@@ -102,23 +139,26 @@ MapView.addMarkersForPostBacs = function (map, postBacsData) {
             const latitude = parseFloat(postBac.lat);
             const longitude = parseFloat(postBac.lng);
             if (!isNaN(latitude) && !isNaN(longitude)) {
-                const postBacsCount = postBac.postBacs || 0;
+                const distance = map.distance(centerCoords, [latitude, longitude]) / 1000; // Distance en km
+                if (distance <= radius) {
+                    const postBacsCount = postBac.postBacs || 0;
 
-                const redIcon = new L.Icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                });
+                    const redIcon = new L.Icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    });
 
-                const marker = L.marker([latitude, longitude], { icon: redIcon })
-                    .bindPopup(`
-                        <b>Département:</b> ${postBac.deptCode}<br>
-                        <b>Nombre de candidatures post-bac:</b> ${postBacsCount}
-                    `);
+                    const marker = L.marker([latitude, longitude], { icon: redIcon })
+                        .bindPopup(`
+                            <b>Département:</b> ${postBac.deptCode}<br>
+                            <b>Nombre de candidatures post-bac:</b> ${postBacsCount}
+                        `);
 
-                markers.addLayer(marker);
+                    markers.addLayer(marker);
+                }
             }
         });
     }
@@ -130,6 +170,8 @@ MapView.addMarkersForPostBacs = function (map, postBacsData) {
         const cluster = event.propagatedFrom;
         map.fitBounds(cluster.getBounds()); // Zoom sur les limites du cluster
     });
+
+    return markers;
 };
 
 export { MapView };

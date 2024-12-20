@@ -5,31 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Statistiques de candidatures MMI</title>
     
+  <script type="module" crossorigin src="assets/index-CfLSDM7D.js"></script>
+  <link rel="stylesheet" crossorigin href="assets/index-UUMJ0uRz.css">
 </head>
 <body>
     <section id="header" class="pb-4"></section>
 
     <section class="data flex flex-row">
-        <div class="mapdiv w-2/3">
-            <div id="map" class="h-[500px] w-full"></div>
-            <div class="w-full flex flex-col justify-center items-center">
-                <label for="seuil" class="mb-0">Choisissez le rayon du cercle (en km) :</label>
-                <input 
-                    class="w-2/3" 
-                    type="range" 
-                    id="slidermap" 
-                    name="seuil" 
-                    min="1" 
-                    max="650" 
-                    value="25" 
-                    step="1" 
-                    oninput="document.getElementById('sliderValueMap').innerText = this.value; this.setAttribute('value', this.value);" 
-                />
-                <span id="sliderValueMap">25</span>
-            </div>
-        </div>
-
-        
+        <div id="map" class="h-[500px] w-2/3"></div>
         <div class="chart w-1/3">
             <h2 class="text-2xl font-bold text-center">Répartition des candidatures par département</h2>
             <div id="barchart" class="h-[400px]"></div>
@@ -38,9 +21,9 @@
                 <input 
                     class="w-2/3" 
                     type="range" 
-                    id="sliderbar" 
+                    id="slider" 
                     name="seuil" 
-                    min="1" 
+                    min="0" 
                     max="170" 
                     value="170" 
                     step="1" 
@@ -51,6 +34,6 @@
         </div>
     </section>
 
-    <script type="module" src="src/main.js"></script>
+
 </body>
 </html>
