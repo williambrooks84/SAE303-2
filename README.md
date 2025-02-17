@@ -13,18 +13,23 @@ Ce projet présente une **carte interactive** affichant les **candidatures pour 
 
 ## Installation et Exécution  
 
-### 1. Installation des dépendances  
+### 1. Cloner le projet
 ```bash
-npm install
+git clone https://github.com/williambrooks84/SAE303-2.git
 ```
 
-### 2. Lancement du projet en local  
+### 2. Installation des dépendances  
+```bash
+npm install vite
+```
+
+### 3. Lancement du projet en local  
 ```bash
 npm run dev
 ```
 Cela démarre un serveur de développement pour tester le projet en local.  
 
-### 3. Génération des fichiers pour production  
+### 4. Génération des fichiers pour production  
 ```bash
 npm run build
 ```
